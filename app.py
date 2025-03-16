@@ -1,0 +1,57 @@
+from flask import Flask, render_template, request, flash, redirect, url_for
+import jwt
+import datetime
+from pymongo import MongoClient
+from werkzeug.security import generate_password_hash
+
+app = Flask(__name__)
+app.secret_key = "your_secret_key"
+
+# MongoDB Configuration
+MONGO_URI = "mongodb+srv://cluster0.mcjuw.mongodb.net/?authSource=%24external&authMechanism=MONGODB-X509&retryWrites=true&w=majority&appName=Cluster0"
+client = MongoClient(
+    MONGO_URI,
+    tls=True,
+    tlsCertificateKeyFile=r"templates/X509-cert-7398551624606348947.pem"
+)
+db = client["UserDB"]
+users_collection = db["users"]
+
+
+
+# JWT Secret Key
+JWT_SECRET =  "S!mpleJWTS3cretK3y!2025@Secure"
+
+@app.route("/reset-password", methods=["GET", "POST"])
+def reset_password():
+    """Handle password reset using the token sent via email."""
+    token = request.args.get("token")
+
+    if not token:
+        flash("Invalid or expired reset link!", "danger")
+        return redirect(url_for("index"))
+
+    try:
+        # Decode the JWT token
+        data = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        email = data["email"]
+    except jwt.ExpiredSignatureError:
+        flash("Reset link expired!", "danger")
+        return redirect(url_for("index"))
+    except jwt.InvalidTokenError:
+        flash("Invalid reset token!", "danger")
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        new_password = request.form["password"]
+        hashed_password = generate_password_hash(new_password)
+
+        # Update password in the database
+        users_collection.update_one({"email": email}, {"$set": {"password": hashed_password}})
+        flash("Password updated successfully!", "success")
+        return redirect(url_for("index"))
+
+    return render_template("reset_password.html")
+
+if __name__ == "__main__":
+    app.run(debug=True)
