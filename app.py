@@ -34,7 +34,7 @@ def reset_password():
 
     if not token:
         flash("Invalid or expired reset link!", "danger")
-        return redirect(url_for("index"))
+        return redirect(url_for("reset_password"))
 
     try:
         print("Received token:", token)  # Debugging line
@@ -44,11 +44,11 @@ def reset_password():
     except jwt.ExpiredSignatureError:
         print("Error: Token expired!")  # Debugging line
         flash("Reset link expired!", "danger")
-        return redirect(url_for("index"))
+        return redirect(url_for("reset_password"))
     except jwt.InvalidTokenError:
         print("Error: Invalid token!")  # Debugging line
         flash("Invalid reset token!", "danger")
-        return redirect(url_for("index"))
+        return redirect(url_for("reset_password"))
 
     if request.method == "POST":
         new_password = request.form.get("password")
@@ -64,7 +64,7 @@ def reset_password():
         users_collection.update_one({"email": email}, {"$set": {"password": hashed_password}})
         
         flash("Password updated successfully!", "success")
-        return redirect(url_for("index"))
+        return redirect(url_for("reset_password"))
 
     return render_template("reset_password.html", token=token)
 
