@@ -21,6 +21,12 @@ users_collection = db["users"]
 JWT_SECRET = "S!mpleJWTS3cretK3y!2025@Secure"
 
 
+@app.route("/")
+def index():
+    """Home route to prevent URL errors."""
+    return "Welcome to the Homepage!"
+
+
 @app.route("/reset-password", methods=["GET", "POST"])
 def reset_password():
     """Handle password reset using the token sent via email."""
@@ -44,8 +50,6 @@ def reset_password():
         flash("Invalid reset token!", "danger")
         return redirect(url_for("index"))
 
-
-
     if request.method == "POST":
         new_password = request.form.get("password")
 
@@ -62,7 +66,7 @@ def reset_password():
         flash("Password updated successfully!", "success")
         return redirect(url_for("index"))
 
-    return redirect(url_for("index"))
+    return render_template("reset_password.html", token=token)
 
 
 if __name__ == "__main__":
