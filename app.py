@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, redirect, url_for
+from flask import Flask, render_template, request, flash, redirect, url_for, session
 import jwt
 import datetime
 from pymongo import MongoClient
@@ -23,8 +23,8 @@ JWT_SECRET = "S!mpleJWTS3cretK3y!2025@Secure"
 
 @app.route("/")
 def index():
-    """Home route to prevent URL errors."""
-    return "Welcome to the Homepage!"
+    """Home route with flash message display."""
+    return render_template("index.html")
 
 
 @app.route("/reset-password", methods=["GET", "POST"])
@@ -34,7 +34,7 @@ def reset_password():
 
     if not token:
         flash("Invalid or expired reset link!", "danger")
-        return redirect(url_for("reset_password"))
+        return redirect(url_for("index"))
 
     try:
         print("Received token:", token)  # Debugging line
@@ -44,11 +44,11 @@ def reset_password():
     except jwt.ExpiredSignatureError:
         print("Error: Token expired!")  # Debugging line
         flash("Reset link expired!", "danger")
-        return redirect(url_for("reset_password"))
+        return redirect(url_for("index"))
     except jwt.InvalidTokenError:
         print("Error: Invalid token!")  # Debugging line
         flash("Invalid reset token!", "danger")
-        return redirect(url_for("reset_password"))
+        return redirect(url_for("index"))
 
     if request.method == "POST":
         new_password = request.form.get("password")
@@ -62,9 +62,12 @@ def reset_password():
 
         # Update password in the database
         users_collection.update_one({"email": email}, {"$set": {"password": hashed_password}})
-        
-        flash("Password updated successfully!", "success")
-        return redirect(url_for("reset_password"))
+
+        # Remove used token from session
+        session.pop("reset_token", None)
+
+        flash("Password updated successfully! You can now log in.", "success")
+        return redirect(url_for("index"))
 
     return render_template("reset_password.html", token=token)
 
