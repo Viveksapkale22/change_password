@@ -62,7 +62,7 @@ def reset_password():
         flash("Password updated successfully!", "success")
         return redirect(url_for("index"))
 
-    return render_template("reset_password.html")
+    return redirect(url_for("index"))
 
 
 if __name__ == "__main__":
