@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, flash, redirect, url_for, ses
 import jwt
 import datetime
 from pymongo import MongoClient
-from werkzeug.security import generate_password_hash
+import bcrypt
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
@@ -51,14 +51,14 @@ def reset_password():
         return redirect(url_for("index"))
 
     if request.method == "POST":
-        new_password = request.form.get("password")
-
+         new_password = request.form["password"]
+         hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
         if len(new_password) < 6:
             flash("Password must be at least 6 characters long!", "danger")
             return redirect(url_for("reset_password", token=token))
 
         # Hash the new password
-        hashed_password = generate_password_hash(new_password)
+         hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
 
         # Update password in the database
         users_collection.update_one({"email": email}, {"$set": {"password": hashed_password}})
